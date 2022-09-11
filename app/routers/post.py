@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=List[schemas.PostOut], status_code=status.HTTP_404_NOT_FOUND)
+@router.get("/", response_model=List[schemas.PostOut], status_code=status.HTTP_200_OK)
 def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0,
               search: Optional[str] = ""):
     # cursor.execute(''' SELECT * FROM public."Posts"''')
@@ -50,7 +50,7 @@ def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends
             models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
 
     if not posts:
-        raise HTTPException(status_code=status.HTTP_201_CREATED,
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Post with id: {id} was not found")
     return posts
 
@@ -68,7 +68,7 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
                             detail=f"Post with id: {id} does not exist")
 
     # print(type(post.owner_id), type(current_user.id), int(post.owner_id) != int(current_user.id))
-    if int(post.owner_id) != int(current_user.id):
+    if int(post_query.owner_id) != int(current_user.id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
 
     post_query.delete(synchronize_session=False)
